@@ -37,11 +37,10 @@ namespace pcl {
         struct fun_wrapper:fun_wrapper_base {
             function_t function;
 
-            template <typename function_t>
-            fun_wrapper(function_t&& fun): function(std::move(fun)){}
             void call() { 
-                //function();
+                function();
             }
+            fun_wrapper(function_t&& fun): function(std::move(fun)){}
         };
 
         std::unique_ptr<fun_wrapper_base> task;
@@ -51,7 +50,7 @@ namespace pcl {
         task_t(function_t&& fun):
             task(new fun_wrapper<function_t>(std::move(fun)))
         {}
-        
+
         template <typename function_t>
         task_t(fun_wrapper_base&& fun):
             task(new fun_wrapper<function_t>(std::move(fun)))
@@ -59,24 +58,21 @@ namespace pcl {
 
         void operator()() { task->call(); }
 
+        task_t(task_t&& other):
+            task(std::move(other.task))
+        {}
+
+
+        task_t& operator=(task_t&& other) {
+            task = std::move(other.task);
+            return *this;
+        };
+
         task_t() = default;
-        task_t(fun_wrapper_base& fun) = delete;
-        task_t(const fun_wrapper_base& fun) = delete;
-        
-        task_t(task_t& x) {
-            task = std::move(x.task);
-        };
-        task_t operator=(task_t& x) { 
-            task = std::move(x.task);
-            return this;
-        };
-
-        //fun_wrapper_base& operator=(fun_wrapper_base& fun) = delete;
-        //fun_wrapper_base& operator=(const fun_wrapper_base& fun) {}
+        task_t(const task_t&) = delete;
+        task_t(task_t&) = delete;
+        task_t& operator=(const task_t& fun) = delete;
     }; // task_t
-
-    ///5657
-   
 
     //---------------------------TASK SCHEDULER---------------------------
     class scheduler {
@@ -86,24 +82,43 @@ namespace pcl {
         
         size_t n_threads;
         join_quard threads_join;
-        std::atomic_bool done;
+        std::atomic_bool add_finsh = false;
+
+        std::atomic_ullong execute_count = 0;
+        std::atomic_ullong finish_count = 0;
+
 
         void execute_tasks(size_t index) {
-            while (!done) {
+            while (!flag || empty_check()) {
                 task_t task;
-                if (queues[index]->try_pop(task))
+                if (queues[index]->try_pop(task)) { 
                     task();
+                    ++finish_count;
+                }
                 else {
-                    while (!queues[random()]->try_pop(task) && !done);
-                    if (!done) return;
+                    bool h=true;
+                    while (!(queues[random()]->try_pop(task) || !(h=empty_check())));
+                    if (!h) return;
                     task();
+                    ++finish_count;
                 }
             }
         }
 
+        bool empty_check() {
+            for (int i = 0; i < n_threads; ++i)
+                if (!queues[i]->empty()) return true;
+
+            done = true;
+            if (flag) return false;
+            return true;
+        }
+
+
         int random() {
-            //return rand() % n_threads;
-            return 0;
+            static thread_local size_t number = 0;
+            return (number++) % n_threads;
+            //return 0;
         }
 
     public:
@@ -111,14 +126,29 @@ namespace pcl {
             return std::thread::hardware_concurrency();
         };
 
-        template<typename function_t, typename... args_t>
-        std::future<typename std::result_of<function_t()>::type> add_task(function_t function, args_t args) {
+        //template<typename function_t, typename... args_type>
+        //std::future<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
+        //    typedef typename std::result_of<function_t(args_type...)>::type result_type;
+
+        //    std::packaged_task<result_type()> task(std::bind(function, std::forward<args_type>(args)...));
+        //    std::future<result_type> res(task.get_future());
+
+        //    queues[random()]->push(std::move(task));
+        //    return res;
+        //}
+
+        template<typename function_t>
+        std::future<typename std::result_of<function_t()>::type> add_task(function_t function) {
             typedef typename std::result_of<function_t()>::type result_type;
-            
+
+            ++execute_count;
+
+
             std::packaged_task<result_type()> task(std::move(function));
             std::future<result_type> res(task.get_future());
-            
+
             queues[random()]->push(std::move(task));
+            flag = true;
             return res;
         }
 
@@ -129,8 +159,8 @@ namespace pcl {
         }
 
         scheduler() :
-            //n_threads(std::thread::hardware_concurrency()),
-            n_threads(1),
+            n_threads(std::thread::hardware_concurrency()),
+            //n_threads(2),
             threads_join(threads),
             done(false)
         {
@@ -141,7 +171,7 @@ namespace pcl {
         }
 
         ~scheduler() {
-            done = true;
+            while (empty_check() || !flag);
         }
 
     }; // scheduler
