@@ -1,6 +1,7 @@
 #include "scheduler.h"
+#include "word_counter.h"
+
 #include <iostream>
-#include <stdlib.h>
 #include <ctime>
 
 
@@ -24,14 +25,14 @@ size_t do_something(int x, int y) {
 
 void run() {
 
-    const int n = 100;
+    const int n = 1;
 
     size_t sum = 0;
 
     std::future<size_t> f[n];
         pcl::scheduler tasks;
         for (int i = 0; i < n; ++i)
-            f[i] = tasks.add_task(do_nothing);
+            f[i] = tasks.add_task(do_something, 4, 7);
         tasks.wait();
 
     try {
@@ -44,22 +45,43 @@ void run() {
 
 }
 
+std::string separators = "\t\n\r !.?%^+-*/=()[]{},;:-#$&`~\"";
+
+size_t countup_words(const std::string& str) {
+	size_t count = 0;
+	bool inword = false;
+
+	for (auto it = str.cbegin(); it != str.cend(); ++it) {
+		if (separators.find(*it) != std::string::npos)
+			inword = false;
+		else if (!inword) {
+			inword = true;
+			count++;
+		}
+	}
+	return count;
+}
+
+
+
+
 int main() {
-    size_t start_time;
-    size_t sum = 0;
-    const int n = 1000;
+    //size_t start_time;
+    //size_t sum = 0;
+    //const int n = 10;
 
-    start_time = clock();
-    for (int i = 0; i < n; ++i)
-        sum+=do_nothing();
-    std::cout << (clock() - start_time) / 1000.0 << std::endl;
-    std::cout << "sum = " << sum << std::endl;
+    //start_time = clock();
+    //for (int i = 0; i < n; ++i)
+    //    sum+=do_nothing();
+    //std::cout << (clock() - start_time) / 1000.0 << std::endl;
+    //std::cout << "sum = " << sum << std::endl;
 
-        start_time = clock();
-    for (int i = 0; i < 1000; ++i) {
-        run();
-    }
-        std::cout << (clock() - start_time) / 1000.0 << std::endl;
+    //    start_time = clock();
+    //for (int i = 0; i < 1; ++i) {
+    //    run();
+    //}
+    //    std::cout << (clock() - start_time) / 1000.0 << std::endl;
+
 
     std::cout << "Press \"Enter\" to exit"<<std::endl;
     std::getchar();

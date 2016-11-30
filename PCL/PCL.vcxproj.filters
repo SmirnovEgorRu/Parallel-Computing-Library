@@ -20,10 +20,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="queue.h">
+    <ClInclude Include="list.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="list.h">
+    <ClInclude Include="queue.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="scheduler.h">
@@ -33,6 +33,9 @@
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="word_counter.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="scheduler_test.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

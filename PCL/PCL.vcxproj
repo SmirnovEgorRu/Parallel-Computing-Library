@@ -113,6 +113,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="scheduler_test.h" />
     <ClInclude Include="word_counter.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="queue.h" />
