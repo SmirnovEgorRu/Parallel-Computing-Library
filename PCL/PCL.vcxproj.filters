@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="scheduler.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="queue.h">
@@ -35,7 +32,7 @@
     <ClInclude Include="ts_queue.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="function.h">
+    <ClInclude Include="word_counter.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

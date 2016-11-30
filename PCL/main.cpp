@@ -5,7 +5,7 @@
 
 
 size_t do_nothing() {
-    size_t n = 1000000;
+    size_t n = 100000000;
     size_t sum=0;
     for (size_t i = 0; i < n;++i)
         ++sum;
@@ -14,7 +14,7 @@ size_t do_nothing() {
 }
 
 size_t do_something(int x, int y) {
-    size_t n = 1000000;
+    size_t n = 100000000;
     size_t sum = 0;
     for (size_t i = 0; i < n; ++i)
         ++sum;
@@ -25,26 +25,24 @@ size_t do_something(int x, int y) {
 
 void run() {
 
-    const int n = 1000;
+    const int n = 100;
     int x = 5;
     int y = 6;
 
     size_t sum = 0;
 
     std::future<size_t> f[n];
-    {
         pcl::scheduler tasks;
         for (int i = 0; i < n; ++i)
             f[i] = tasks.add_task(do_nothing);
         tasks.wait();
-    }
 
     try {
         for (int i = 0; i < n; ++i)
             sum += f[i].get();
     }
     catch (...) {
-        std::cout << "zalupa" << sum << std::endl;
+        std::cout << "!!!!" << sum << std::endl;
     }
 
     std::cout << "sum = " << sum<<std::endl;
@@ -61,12 +59,11 @@ int main() {
     std::cout << (clock() - start_time) / 1000.0 << std::endl;
     std::cout << "sum = " << sum << std::endl;
 
-
-    for (int i = 0; i < 1000; ++i) {
         start_time = clock();
+    for (int i = 0; i < 1000; ++i) {
         run();
-        std::cout << (clock() - start_time) / 1000.0 << std::endl;
     }
+        std::cout << (clock() - start_time) / 1000.0 << std::endl;
 
     std::cout << "Press \"Enter\" to exit"<<std::endl;
     std::getchar();

@@ -111,10 +111,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="scheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="function.h" />
+    <ClInclude Include="word_counter.h" />
     <ClInclude Include="list.h" />
     <ClInclude Include="queue.h" />
     <ClInclude Include="scheduler.h" />

@@ -8,7 +8,7 @@
 
 
 namespace pcl {
-    
+
     // -------------------PROVIDE JOINING OF ALL THE THREADS-------------------
     class join_quard {
     private:
@@ -79,15 +79,16 @@ namespace pcl {
     private:
         std::vector<std::unique_ptr<pcl::queue<task_t> > > queues;
         std::vector<std::thread> threads;
-        
+
         size_t n_threads;
 
-        std::atomic_bool add_finsh = false;
+        std::atomic_bool add_finish = false;
+        //std::atomic_bool done = false;
         std::atomic_ullong prepare_count = 0;
         std::atomic_ullong finish_count = 0;
 
         void execute_tasks(size_t index) {
-            while (!add_finsh || !queue_are_empty()) {
+            while (!add_finish || !queue_are_empty()) {
                 task_t task;
                 if (queues[index]->try_pop(task)) {
                     task();
@@ -95,12 +96,15 @@ namespace pcl {
                 }
                 else {
                     bool add_task = false;
-                    while (!((add_task = queues[random()]->try_pop(task)) || queue_are_empty()) || !add_finsh);
+                    // (queue_are_empty() && add_finish)) == true - if all tasks was completed
+                    // (add_task = queues[random()]->try_pop(task)) == true - if we have got task from queues
+                    // !(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish) == false - if we have got task from queues or all tasks was completed
+                    while (!(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish));
                     if (add_task) {
                         task();
                         ++finish_count;
                     }
-                    else if (queue_are_empty()) {
+                    else if (queue_are_empty() && add_finish) {
                         return;
                     }
                 }
@@ -141,12 +145,11 @@ namespace pcl {
             std::future<result_type> res(task.get_future());
 
             queues[random()]->push(std::move(task));
-            add_finsh = true;
             return res;
         }
 
         void wait() {
-            add_finsh = true;
+            add_finish = true;
             for (size_t i = 0; i < n_threads; ++i)
                 if (threads[i].joinable())
                     threads[i].join();

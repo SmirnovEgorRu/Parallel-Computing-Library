@@ -2,6 +2,7 @@
 #define _PCL_TF_FUNCTION_HEADER_
 
 #include <string>
+
 /*
 size_t words_counter(const std::string& str) {
     pcl::scheduler tasks;
@@ -43,8 +44,5 @@ void countup_words(const std::string& str,
 }
 
 */
-
-
-
 
 #endif
