@@ -1,11 +1,8 @@
 #ifndef _PCL_TF_QUEUE_HEADER_
 #define _PCL_TF_QUEUE_HEADER_
 
-//#include <queue>
 #include <deque>
-//#include <memory>
 #include <mutex>
-//#include <condition_variable>
 
 namespace pcl {
     template <typename T>

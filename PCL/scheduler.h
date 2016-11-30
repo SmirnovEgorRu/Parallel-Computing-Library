@@ -6,7 +6,6 @@
 #include <future> 
 #include <vector> 
 
-
 namespace pcl {
 
     // -------------------PROVIDE JOINING OF ALL THE THREADS-------------------
@@ -83,7 +82,6 @@ namespace pcl {
         size_t n_threads;
 
         std::atomic_bool add_finish = false;
-        //std::atomic_bool done = false;
         std::atomic_ullong prepare_count = 0;
         std::atomic_ullong finish_count = 0;
 
@@ -96,9 +94,10 @@ namespace pcl {
                 }
                 else {
                     bool add_task = false;
-                    // (queue_are_empty() && add_finish)) == true - if all tasks was completed
-                    // (add_task = queues[random()]->try_pop(task)) == true - if we have got task from queues
-                    // !(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish) == false - if we have got task from queues or all tasks was completed
+                    // (queue_are_empty() && add_finish)) == true                                                     if all tasks was completed
+                    // (add_task = queues[random()]->try_pop(task)) == true -                                         if we have got task from queues
+                    // !(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish) == false   if we have got task from queues 
+                    //                                                                                                   or all tasks was completed
                     while (!(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish));
                     if (add_task) {
                         task();
@@ -126,14 +125,18 @@ namespace pcl {
             return std::thread::hardware_concurrency();
         };
 
-        //template<typename function_t, typename... args_type>
-        //std::future<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
-        //    typedef typename std::result_of<function_t(args_type...)>::type result_type;
-        //    std::packaged_task<result_type()> task(std::bind(function, std::forward<args_type>(args)...));
-        //    std::future<result_type> res(task.get_future());
-        //    queues[random()]->push(std::move(task));
-        //    return res;
-        //}
+        template<typename function_t, typename... args_type>
+        std::future<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
+            typedef typename std::result_of<function_t(args_type...)>::type result_type;
+            
+            ++prepare_count;
+
+            std::packaged_task<result_type()> task(std::bind(function, std::forward<args_type>(args)...));
+            std::future<result_type> res(task.get_future());
+
+            queues[random()]->push(std::move(task));
+            return res;
+        }
 
         template<typename function_t>
         std::future<typename std::result_of<function_t()>::type> add_task(function_t function) {

@@ -6,10 +6,10 @@
 
 size_t do_nothing() {
     size_t n = 100000000;
-    size_t sum=0;
+    size_t sum = 0;
     for (size_t i = 0; i < n;++i)
         ++sum;
-    //std::cout << "do_nothing   ";
+
     return sum;
 }
 
@@ -19,15 +19,12 @@ size_t do_something(int x, int y) {
     for (size_t i = 0; i < n; ++i)
         ++sum;
 
-    std::cout << x + y;
     return sum;
 }
 
 void run() {
 
     const int n = 100;
-    int x = 5;
-    int y = 6;
 
     size_t sum = 0;
 
@@ -42,10 +39,9 @@ void run() {
             sum += f[i].get();
     }
     catch (...) {
-        std::cout << "!!!!" << sum << std::endl;
+        std::cout << "exception!!!!" << sum << std::endl;
     }
 
-    std::cout << "sum = " << sum<<std::endl;
 }
 
 int main() {
