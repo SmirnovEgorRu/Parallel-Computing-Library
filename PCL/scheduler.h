@@ -24,7 +24,6 @@ namespace pcl {
         }
     }; // join_quard
 
-
     //----------------------------WRAPPER FOR TASKS----------------------------
     class task_t {
     private:
@@ -37,10 +36,12 @@ namespace pcl {
         struct fun_wrapper:fun_wrapper_base {
             function_t function;
 
-            void call() { 
+            void call() {
                 function();
             }
-            fun_wrapper(function_t&& fun): function(std::move(fun)){}
+
+            fun_wrapper(function_t&& fun): function(std::move(fun))
+            {}
         };
 
         std::unique_ptr<fun_wrapper_base> task;
@@ -62,7 +63,6 @@ namespace pcl {
             task(std::move(other.task))
         {}
 
-
         task_t& operator=(task_t&& other) {
             task = std::move(other.task);
             return *this;
@@ -81,44 +81,40 @@ namespace pcl {
         std::vector<std::thread> threads;
         
         size_t n_threads;
-        join_quard threads_join;
-        std::atomic_bool add_finsh = false;
 
-        std::atomic_ullong execute_count = 0;
+        std::atomic_bool add_finsh = false;
+        std::atomic_ullong prepare_count = 0;
         std::atomic_ullong finish_count = 0;
 
-
         void execute_tasks(size_t index) {
-            while (!flag || empty_check()) {
+            while (!add_finsh || !queue_are_empty()) {
                 task_t task;
-                if (queues[index]->try_pop(task)) { 
+                if (queues[index]->try_pop(task)) {
                     task();
                     ++finish_count;
                 }
                 else {
-                    bool h=true;
-                    while (!(queues[random()]->try_pop(task) || !(h=empty_check())));
-                    if (!h) return;
-                    task();
-                    ++finish_count;
+                    bool add_task = false;
+                    while (!((add_task = queues[random()]->try_pop(task)) || queue_are_empty()) || !add_finsh);
+                    if (add_task) {
+                        task();
+                        ++finish_count;
+                    }
+                    else if (queue_are_empty()) {
+                        return;
+                    }
                 }
             }
         }
 
-        bool empty_check() {
-            for (int i = 0; i < n_threads; ++i)
-                if (!queues[i]->empty()) return true;
-
-            done = true;
-            if (flag) return false;
+        bool queue_are_empty() {
+            if (finish_count < prepare_count) return false;
             return true;
         }
 
-
-        int random() {
+        size_t random() {
             static thread_local size_t number = 0;
             return (number++) % n_threads;
-            //return 0;
         }
 
     public:
@@ -129,10 +125,8 @@ namespace pcl {
         //template<typename function_t, typename... args_type>
         //std::future<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
         //    typedef typename std::result_of<function_t(args_type...)>::type result_type;
-
         //    std::packaged_task<result_type()> task(std::bind(function, std::forward<args_type>(args)...));
         //    std::future<result_type> res(task.get_future());
-
         //    queues[random()]->push(std::move(task));
         //    return res;
         //}
@@ -141,29 +135,24 @@ namespace pcl {
         std::future<typename std::result_of<function_t()>::type> add_task(function_t function) {
             typedef typename std::result_of<function_t()>::type result_type;
 
-            ++execute_count;
-
+            ++prepare_count;
 
             std::packaged_task<result_type()> task(std::move(function));
             std::future<result_type> res(task.get_future());
 
             queues[random()]->push(std::move(task));
-            flag = true;
+            add_finsh = true;
             return res;
         }
 
         void wait() {
+            add_finsh = true;
             for (size_t i = 0; i < n_threads; ++i)
                 if (threads[i].joinable())
                     threads[i].join();
         }
 
-        scheduler() :
-            n_threads(std::thread::hardware_concurrency()),
-            //n_threads(2),
-            threads_join(threads),
-            done(false)
-        {
+        scheduler() : n_threads(max_threads()) {
             for (size_t i = 0; i < n_threads; ++i)
                 queues.push_back(std::unique_ptr<pcl::queue<task_t> >(new queue<task_t>));
             for (size_t i = 0; i < n_threads; ++i)
@@ -171,7 +160,7 @@ namespace pcl {
         }
 
         ~scheduler() {
-            while (empty_check() || !flag);
+            wait();
         }
 
     }; // scheduler
