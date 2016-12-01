@@ -23,6 +23,23 @@ namespace pcl {
         }
     }; // join_quard
 
+
+    template <typename result_t>
+    class promise_value {
+        std::future<result_t> future_value;
+
+    public:
+        result_t get_value() {
+            return future_value.get();
+        }
+
+        promise_value(std::future<result_t>&& other_future_value):
+            future_value(std::move(other_future_value))
+        {}
+
+        promise_value() = default;
+    };
+
     //----------------------------WRAPPER FOR TASKS----------------------------
     class task_t {
     private:
@@ -73,7 +90,7 @@ namespace pcl {
         task_t& operator=(const task_t& fun) = delete;
     }; // task_t
 
-    //---------------------------TASK SCHEDULER---------------------------
+    //-----------------------------TASK SCHEDULER------------------------------
     class scheduler {
     private:
         std::vector<std::unique_ptr<pcl::queue<task_t> > > queues;
@@ -134,7 +151,7 @@ namespace pcl {
         };
 
         template<typename function_t, typename... args_type>
-        std::future<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
+        promise_value<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
             typedef typename std::result_of<function_t(args_type...)>::type result_type;
 
             ++prepare_count;
@@ -143,11 +160,11 @@ namespace pcl {
             std::future<result_type> res(task.get_future());
 
             queues[random()]->push(std::move(task));
-            return res;
+            return promise_value<result_type>(std::move(res));
         }
 
         template<typename function_t>
-        std::future<typename std::result_of<function_t()>::type> add_task(function_t function) {
+        promise_value<typename std::result_of<function_t()>::type> add_task(function_t function) {
             typedef typename std::result_of<function_t()>::type result_type;
 
             ++prepare_count;
@@ -156,7 +173,8 @@ namespace pcl {
             std::future<result_type> res(task.get_future());
 
             queues[random()]->push(std::move(task));
-            return res;
+
+            return promise_value<result_type>(std::move(res));
         }
 
         void wait() {

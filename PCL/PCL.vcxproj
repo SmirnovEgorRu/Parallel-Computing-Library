@@ -119,6 +119,7 @@
     <ClInclude Include="queue.h" />
     <ClInclude Include="scheduler.h" />
     <ClInclude Include="ts_queue.h" />
+    <ClInclude Include="word_counter_test.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
