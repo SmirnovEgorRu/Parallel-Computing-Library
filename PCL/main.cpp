@@ -64,8 +64,8 @@ int main() {
 
     //std::cout << (clock() - start_time) / 1000.0 << std::endl;
 
-    algorithm_test for_each;
-    for_each.execute();
+    algorithm_test algorithm;
+    algorithm.execute();
 
 
     std::cout << "Press \"Enter\" to exit"<<std::endl;
