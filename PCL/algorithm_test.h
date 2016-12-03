@@ -86,11 +86,49 @@ class algorithm_test {
         else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
     }
 
+
+    // count
+    size_t pcl_count_test(std::vector<size_t> &v, size_t value) {
+        size_t start_time = clock();
+
+        size_t sum = pcl::count(v.begin(), v.end(), value);
+
+        std::cout << "pcl::count time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return sum;
+    }
+
+    size_t std_count_test(std::vector<size_t> &v, size_t value) {
+        size_t start_time = clock();
+
+        size_t sum = std::count(v.begin(), v.end(), value);
+
+        std::cout << "std::count time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return sum;
+    }
+
+    void count_test() {
+        const size_t size = 150000000;
+
+        std::vector<size_t> v(size);
+        for (size_t i = 0; i < size; ++i)
+            v[i] = i % (size / 100);
+
+        const size_t find_value = size/100 - 1;
+
+        size_t std_sum = std_count_test(v, find_value);
+        size_t pcl_sum = pcl_count_test(v, find_value);
+
+        if (pcl_sum == std_sum) std::cout << "the test was completed successfully! amounts are equals." << std::endl << std::endl;
+        else std::cout << "the test is failed! amounts are not equals." << std::endl << std::endl;
+    }
+
+
 public:
 
     void execute() {
         for_each_test();
         find_test();
+        count_test();
     }
 };
 
