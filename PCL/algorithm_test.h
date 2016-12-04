@@ -283,48 +283,59 @@ class algorithm_test {
 
     // sort
     void pcl_sort_test(std::vector<size_t> &v) {
-        size_t start_time = clock();
+        //size_t start_time = clock();
 
         pcl::sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
 
-        std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+        //std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
+
     void std_sort_test(std::vector<size_t> &v) {
-        size_t start_time = clock();
+        //size_t start_time = clock();
 
         std::sort(v.begin(), v.end());
 
-        std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+        //std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
 
     void sort_test() {
-        const size_t size = 100;
+        size_t size = 100;
 
         std::vector<size_t> v(size);
         for (size_t i = 0; i < size; ++i)
-            v[i] = size - i;
+            v[i] = rand();
 
-        std_sort_test(v);
+        size_t start_time = clock();
+        //std_sort_test(v);
+        std::sort(v.begin(), v.end());
+        std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
 
         for (size_t i = 0; i < size; ++i)
-            v[i] = size - i;
+            v[i] = rand();
 
-        pcl_sort_test(v);
+        start_time = clock();
+        //pcl_sort_test(v);
+        pcl::sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
+        std::cout << "std::pcl time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
+
+
+
 
 
 public:
 
     void execute() {
-        //for_each_test();
-        //find_test();
-        //count_test();
-        //equal_test();
-        //fill_test();
-        //generate_test();
-        //min_element_test();
-        //max_element_test();
+        for_each_test();
+        find_test();
+        count_test();
+        equal_test();
+        fill_test();
+        generate_test();
+        min_element_test();
+        max_element_test();
         sort_test();
+        //qsort_test();
     }
 };
 

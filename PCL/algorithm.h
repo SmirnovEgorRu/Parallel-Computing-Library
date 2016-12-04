@@ -195,6 +195,7 @@ namespace pcl {
         iterator_t start = first + ((n_threads - 1) * block_size);
         iterator_t end = last;
         tasks.add_task(fill_local<iterator_t, match_t>, start, end, val);
+        tasks.wait();
     }
 
     template<class iterator_t, class match_t>
@@ -228,6 +229,8 @@ namespace pcl {
         iterator_t start = first + ((n_threads - 1) * block_size);
         iterator_t end = last;
         tasks.add_task(generate_local<iterator_t, result_type>, start, end, std::function<result_type()>(generator));
+
+        tasks.wait();
     }
 
     template<typename iterator_t, typename result_t>
@@ -335,27 +338,39 @@ namespace pcl {
     // sort
     template<typename iterator_t, typename value_t>
     void sort(iterator_t first, iterator_t last) {
+        pcl_impl::sort_impl<iterator_t, value_t>(first, last);
+        pcl::scheduler tasks;
+        tasks.wait();
+    }
+
+}
+
+namespace pcl_impl {
+    template<typename iterator_t, typename value_t>
+    void sort_impl(iterator_t first, iterator_t last) {
         if (last - first <= 1) return;
+
         pcl::scheduler tasks;
 
         auto mid = first + (last - first) / 2;
         const auto mid_value = *mid;
 
-        std::swap(*mid, *(last-1));
+        std::swap(*mid, *(last - 1));
         auto p = std::partition(first, last, [&](const value_t& value) { return value < mid_value; });
-        std::swap(*p, *(last -1));
+        std::swap(*p, *(last - 1));
 
-
-        const size_t max_size = 1000;
+        const size_t max_size = 100;
         if (last - first > max_size) {
-            tasks.add_task(sort<iterator_t, value_t>, first, p);
-            sort<iterator_t, value_t>(p+1, last);
+            tasks.add_task(sort_impl<iterator_t, value_t>, first, p);
+            tasks.add_task(sort_impl<iterator_t, value_t>, p + 1, last);
         }
         else {
-            sort<iterator_t, value_t>(first, p);
-            sort<iterator_t, value_t>(p + 1, last);
+            if (first < p)    sort_impl<iterator_t, value_t>(first, p);
+            if (p + 1 < last) sort_impl<iterator_t, value_t>(p + 1, last);
         }
     }
 }
+
+
 
 #endif

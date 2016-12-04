@@ -91,8 +91,13 @@ namespace pcl {
     }; // task_t
 
     //-----------------------------TASK SCHEDULER------------------------------
-    class scheduler {
+    
+
+
+    class scheduler_impl {
     private:
+        static scheduler_impl* _instance;
+
         std::vector<std::unique_ptr<pcl::queue<task_t> > > queues;
         std::vector<std::thread> threads;
 
@@ -103,7 +108,7 @@ namespace pcl {
         std::atomic_ullong finish_count = 0;
 
         void execute_tasks(size_t index) {
-            while (!add_finish || !queue_are_empty()) {
+            while (true) {
                 task_t task;
                 if (queues[index]->try_pop(task)) {
                     task();
@@ -111,7 +116,6 @@ namespace pcl {
                 }
                 else {
                     bool add_task = false;
-                    
                     /*
                     if all tasks was completed:
                     (queue_are_empty() && add_finish)) == true
@@ -122,14 +126,13 @@ namespace pcl {
                     if we have got task from queues and or all tasks was completed:
                     !(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish) == false
                     */
-
-                    while (!(add_task = queues[random()]->try_pop(task)) && !(queue_are_empty() && add_finish));
-                    if (add_task) {
-                        task();
-                        ++finish_count;
-                    }
-                    else if (queue_are_empty() && add_finish) {
-                        return;
+                    if (queue_are_empty()) std::this_thread::yield();
+                    else {
+                        add_task = queues[random()]->try_pop(task);
+                        if (add_task) {
+                            task();
+                            ++finish_count;
+                        }
                     }
                 }
             }
@@ -143,6 +146,16 @@ namespace pcl {
         size_t random() {
             static thread_local size_t number = 0;
             return (number++) % n_threads;
+        }
+
+        scheduler_impl() : n_threads(max_threads()) {
+            for (size_t i = 0; i < n_threads; ++i)
+                queues.push_back(std::unique_ptr<pcl::queue<task_t> >(new queue<task_t>));
+            for (size_t i = 0; i < n_threads; ++i)
+                threads.push_back(std::thread(&pcl::scheduler_impl::execute_tasks, this, i));
+
+            for (size_t i = 0; i < n_threads; ++i)
+                if (threads[i].joinable()) threads[i].detach();
         }
 
     public:
@@ -163,39 +176,65 @@ namespace pcl {
             return promise_value<result_type>(std::move(res));
         }
 
-        template<typename function_t>
-        promise_value<typename std::result_of<function_t()>::type> add_task(function_t function) {
-            typedef typename std::result_of<function_t()>::type result_type;
-
-            ++prepare_count;
-
-            std::packaged_task<result_type()> task(std::move(function));
-            std::future<result_type> res(task.get_future());
-
-            queues[random()]->push(std::move(task));
-
-            return promise_value<result_type>(std::move(res));
-        }
-
         void wait() {
             add_finish = true;
+            std::thread::id x = std::this_thread::get_id();
+            while (!(queue_are_empty() && add_finish)) std::this_thread::yield();
+        }
+
+        void not_done() {
+            add_finish = false;
+        }
+
+        static scheduler_impl* instance() {
+            if (_instance == nullptr)
+                return _instance = new scheduler_impl;
+            //_instance->not_done();
+            return _instance;
+        }
+
+
+        static void delete_scheduler() {
+            if (_instance == nullptr) return;
+            else {
+                delete _instance;
+                _instance = nullptr;
+            }
+        }
+
+        ~scheduler_impl() {
+            add_finish = true;
+            while (!(queue_are_empty() && add_finish));
             for (size_t i = 0; i < n_threads; ++i)
                 if (threads[i].joinable())
                     threads[i].join();
         }
 
-        scheduler() : n_threads(max_threads()) {
-            for (size_t i = 0; i < n_threads; ++i)
-                queues.push_back(std::unique_ptr<pcl::queue<task_t> >(new queue<task_t>));
-            for (size_t i = 0; i < n_threads; ++i)
-                threads.push_back(std::thread(&pcl::scheduler::execute_tasks, this, i));
-        }
-
-        ~scheduler() {
-            wait();
-        }
-
     }; // scheduler
+    scheduler_impl* scheduler_impl::_instance = nullptr;
+
+    class scheduler {
+        pcl::scheduler_impl* impl;
+
+    public:
+        template<typename function_t, typename... args_type>
+        promise_value<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
+            return impl->add_task(function, std::forward<args_type>(args)...);
+        }
+
+        void wait() {
+            impl->wait();
+        }
+
+        static size_t max_threads() {
+            return std::thread::hardware_concurrency();
+        };
+
+        scheduler() {
+            impl = pcl::scheduler_impl::instance();
+        }
+    };
+
 } // pcl
 
 #endif

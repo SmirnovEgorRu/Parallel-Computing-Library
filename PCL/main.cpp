@@ -32,40 +32,16 @@ void qsort(std::vector<int>& arr, int b, int e)
 
 
 int main() {
-    //scheduler_test y;
-    //y.execute();
+    scheduler_test y;
+    y.execute();
 
-    //word_counter_test x;
-    //x.execute();
-
-    int n = 1000000;
-    size_t start_time;
-
-    std::vector<int> arr(n);
-    std::vector<int> arr_1(n);
-
-    for (int i = 0; i < n;++i) {
-        arr[i] = rand();
-        arr_1[i] = rand();
-    }
-
-    //start_time = clock();
-    //pcl::sorter<std::vector<int> > sort;
-    //sort(arr, 0, n-1);
-    //std::cout << (clock() - start_time) / 1000.0 << std::endl;
-
-    //start_time = clock();
-    ////std::sort(arr_1.begin(), arr_1.end());
-    //qsort(arr_1, 0, n - 1);
-
-
-    ////for (int i = 0; i < n; ++i)
-    ////    std::cout << arr_1[i] <<" ";
-
-    //std::cout << (clock() - start_time) / 1000.0 << std::endl;
+    word_counter_test x;
+    x.execute();
 
     algorithm_test algorithm;
     algorithm.execute();
+
+    //pcl::scheduler_impl::delete_scheduler();
 
 
     std::cout << "Press \"Enter\" to exit"<<std::endl;
