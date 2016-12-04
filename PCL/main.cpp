@@ -41,8 +41,7 @@ int main() {
     algorithm_test algorithm;
     algorithm.execute();
 
-    //pcl::scheduler_impl::delete_scheduler();
-
+    pcl::scheduler::delete_scheduler();
 
     std::cout << "Press \"Enter\" to exit"<<std::endl;
     std::getchar();

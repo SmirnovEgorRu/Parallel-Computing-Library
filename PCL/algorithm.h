@@ -339,8 +339,7 @@ namespace pcl {
     template<typename iterator_t, typename value_t>
     void sort(iterator_t first, iterator_t last) {
         pcl_impl::sort_impl<iterator_t, value_t>(first, last);
-        pcl::scheduler tasks;
-        tasks.wait();
+        pcl::scheduler::wait();
     }
 
 }
@@ -359,14 +358,14 @@ namespace pcl_impl {
         auto p = std::partition(first, last, [&](const value_t& value) { return value < mid_value; });
         std::swap(*p, *(last - 1));
 
-        const size_t max_size = 100;
+        const size_t max_size = 12000;
         if (last - first > max_size) {
             tasks.add_task(sort_impl<iterator_t, value_t>, first, p);
-            tasks.add_task(sort_impl<iterator_t, value_t>, p + 1, last);
+            sort_impl<iterator_t, value_t>(p + 1, last);
         }
         else {
-            if (first < p)    sort_impl<iterator_t, value_t>(first, p);
-            if (p + 1 < last) sort_impl<iterator_t, value_t>(p + 1, last);
+            sort_impl<iterator_t, value_t>(first, p);
+            sort_impl<iterator_t, value_t>(p + 1, last);
         }
     }
 }

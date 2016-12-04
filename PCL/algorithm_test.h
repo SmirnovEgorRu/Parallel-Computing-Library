@@ -299,29 +299,23 @@ class algorithm_test {
     }
 
     void sort_test() {
-        size_t size = 100;
-
+        size_t size = 50000000;
+        srand(time(0));
         std::vector<size_t> v(size);
         for (size_t i = 0; i < size; ++i)
-            v[i] = rand();
+            v[i] = size - i;
 
         size_t start_time = clock();
-        //std_sort_test(v);
         std::sort(v.begin(), v.end());
         std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
 
         for (size_t i = 0; i < size; ++i)
-            v[i] = rand();
+            v[i] = size - i;
 
         start_time = clock();
-        //pcl_sort_test(v);
         pcl::sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
-        std::cout << "std::pcl time: " << (clock() - start_time) / 1000.0 << std::endl;
+        std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
-
-
-
-
 
 public:
 
