@@ -126,6 +126,53 @@ namespace pcl {
         return sum;
     }
 
+    // equal
+    template<typename _1_iterator_t, typename _2_iterator_t>
+    bool equal(_1_iterator_t first_1, _1_iterator_t last_1, _2_iterator_t first_2) {
+        pcl::scheduler tasks;
+
+        size_t n_threads = pcl::scheduler::max_threads();
+        size_t length = last_1 - first_1;
+        size_t block_size = length / n_threads;
+
+        if (block_size == 0)
+            return equal_local(first_1, last_1, first_2);
+
+        std::vector<pcl::promise_value<bool> > promise(n_threads);
+
+        for (size_t i = 0; i < n_threads - 1; ++i) {
+            _1_iterator_t start_1 = first_1 + (i * block_size);
+            _1_iterator_t end_1   = first_1 + ((i + 1) * block_size);
+            _2_iterator_t start_2 = first_2 + ((i + 1) * block_size);
+            promise[i] = tasks.add_task(equal_local<_1_iterator_t, _2_iterator_t>, start_1, end_1, start_2);
+        }
+
+        _1_iterator_t start_1 = first_1 + ((n_threads - 1) * block_size);
+        _1_iterator_t start_2 = first_2 + ((n_threads - 1) * block_size);
+        _2_iterator_t end_1 = last_1;
+
+        promise[n_threads - 1] = tasks.add_task(equal_local<_1_iterator_t, _2_iterator_t>, start_1, end_1, start_2);
+
+        tasks.wait();
+
+        size_t sum = 0;
+        for (size_t i = 0; i < n_threads; ++i)
+            sum += promise[i].get_value();
+
+        return (sum != 0);
+    }
+
+    template<typename _1_iterator_t, typename _2_iterator_t>
+    bool equal_local(_1_iterator_t first_1, _1_iterator_t last_1, _2_iterator_t first_2) {
+        while (first_1 != last_1) {
+            if (*first_1 != *first_2) return false;
+            ++first_1;
+            ++first_2;
+        }
+
+        return true;
+    }
+
 }
 
 #endif

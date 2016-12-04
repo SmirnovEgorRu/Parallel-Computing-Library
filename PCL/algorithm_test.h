@@ -86,7 +86,6 @@ class algorithm_test {
         else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
     }
 
-
     // count
     size_t pcl_count_test(std::vector<size_t> &v, size_t value) {
         size_t start_time = clock();
@@ -96,7 +95,6 @@ class algorithm_test {
         std::cout << "pcl::count time: " << (clock() - start_time) / 1000.0 << std::endl;
         return sum;
     }
-
     size_t std_count_test(std::vector<size_t> &v, size_t value) {
         size_t start_time = clock();
 
@@ -105,7 +103,6 @@ class algorithm_test {
         std::cout << "std::count time: " << (clock() - start_time) / 1000.0 << std::endl;
         return sum;
     }
-
     void count_test() {
         const size_t size = 150000000;
 
@@ -122,6 +119,39 @@ class algorithm_test {
         else std::cout << "the test is failed! amounts are not equals." << std::endl << std::endl;
     }
 
+    // equal
+    size_t pcl_equal_test(std::vector<size_t> &v) {
+        size_t start_time = clock();
+
+        size_t sum = pcl::equal(v.begin(), v.end(), v.begin());
+
+        std::cout << "pcl::equal time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return sum;
+    }
+    size_t std_equal_test(std::vector<size_t> &v) {
+        size_t start_time = clock();
+
+        size_t sum = std::equal(v.begin(), v.end(), v.begin());
+
+        std::cout << "std::equal time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return sum;
+    }
+    void equal_test() {
+        const size_t size = 150000000;
+
+        std::vector<size_t> v(size);
+        for (size_t i = 0; i < size; ++i)
+            v[i] = i;
+
+        bool std_bool = std_equal_test(v);
+        bool pcl_bool = pcl_equal_test(v);
+
+        if (pcl_bool == std_bool) std::cout << "the test was completed successfully! values are equals." << std::endl << std::endl;
+        else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
+    }
+
+
+
 
 public:
 
@@ -129,6 +159,7 @@ public:
         for_each_test();
         find_test();
         count_test();
+        equal_test();
     }
 };
 
