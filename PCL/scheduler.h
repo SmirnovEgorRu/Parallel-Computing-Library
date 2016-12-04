@@ -8,7 +8,30 @@
 
 namespace pcl {
 
-    // -------------------PROVIDE JOINING OF ALL THE THREADS-------------------
+    // WRAPPER FOR STD::FUTURE
+    template <typename result_t>
+    class promise_value {
+        std::future<result_t> future_value;
+
+    public:
+        result_t get_value() {
+            return future_value.get();
+        }
+
+        promise_value(std::future<result_t>&& other_future_value) :
+            future_value(std::move(other_future_value))
+        {}
+
+        promise_value() = default;
+    }; // promise_value
+
+}
+
+
+
+namespace pcl_impl {
+
+    // PROVIDE JOINING OF ALL THE THREADS
     class join_quard {
     private:
         std::vector<std::thread>& threads;
@@ -23,24 +46,7 @@ namespace pcl {
         }
     }; // join_quard
 
-
-    template <typename result_t>
-    class promise_value {
-        std::future<result_t> future_value;
-
-    public:
-        result_t get_value() {
-            return future_value.get();
-        }
-
-        promise_value(std::future<result_t>&& other_future_value):
-            future_value(std::move(other_future_value))
-        {}
-
-        promise_value() = default;
-    };
-
-    //----------------------------WRAPPER FOR TASKS----------------------------
+    // WRAPPER FOR TASKS
     class task_t {
     private:
         struct fun_wrapper_base {
@@ -90,10 +96,7 @@ namespace pcl {
         task_t& operator=(const task_t& fun) = delete;
     }; // task_t
 
-    //-----------------------------TASK SCHEDULER------------------------------
-    
-
-
+    // IMPLEMENTATION OF TASK SCHEDULER
     class scheduler_impl {
     private:
         static scheduler_impl* _instance;
@@ -103,15 +106,16 @@ namespace pcl {
 
         size_t n_threads;
 
-        std::atomic_bool add_finish = false;
-        std::atomic_bool done = false;
+        std::atomic_bool   done = false;
         std::atomic_ullong prepare_count = 0;
         std::atomic_ullong finish_count = 0;
+
+        join_quard join_threads;
 
         void execute_tasks(size_t index) {
             static std::atomic_ullong steal_number = 0;
 
-            while (!done || finish_count < prepare_count) {
+            while (!done || !queue_are_empty()) {
                 task_t task;
                 if (finish_count == prepare_count) std::this_thread::yield();
                 else if (queues[index]->try_pop(task)) {
@@ -132,20 +136,16 @@ namespace pcl {
             return true;
         }
 
-        scheduler_impl() : n_threads(max_threads()) {
+        scheduler_impl() : n_threads(max_threads()), join_threads(threads) {
             for (size_t i = 0; i < n_threads; ++i)
-                queues.push_back(std::unique_ptr<pcl::queue<task_t> >(new queue<task_t>));
+                queues.push_back(std::unique_ptr<pcl::queue<task_t> >(new pcl::queue<task_t>));
             for (size_t i = 0; i < n_threads; ++i)
-                threads.push_back(std::thread(&pcl::scheduler_impl::execute_tasks, this, i));
+                threads.push_back(std::thread(&pcl_impl ::scheduler_impl::execute_tasks, this, i));
         }
 
     public:
-        static size_t max_threads() {
-            return std::thread::hardware_concurrency();
-        };
-
         template<typename function_t, typename... args_type>
-        promise_value<typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
+        pcl::promise_value <typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
             typedef typename std::result_of<function_t(args_type...)>::type result_type;
 
             static std::atomic_ullong add_number = 0;
@@ -155,12 +155,17 @@ namespace pcl {
             std::future<result_type> res(task.get_future());
 
             queues[add_number++ % n_threads]->push(std::move(task));
-            return promise_value<result_type>(std::move(res));
+            return pcl::promise_value<result_type>(std::move(res));
         }
 
         void wait() {
-            add_finish = true;
-            while (!(queue_are_empty() && add_finish)) std::this_thread::yield();
+            while (!(queue_are_empty())) std::this_thread::yield();
+        }
+
+        void delete_scheduler() {
+             done = true;
+             for (size_t i = 0; i < n_threads; ++i)
+                if (threads[i].joinable()) threads[i].join();
         }
 
         static scheduler_impl* instance() {
@@ -169,29 +174,28 @@ namespace pcl {
             return _instance;
         }
 
-         void delete_scheduler() {
-             done = true;
-             for (size_t i = 0; i < n_threads; ++i)
-                if (threads[i].joinable()) threads[i].join();
+        static void delete_instance() {
+            if (_instance == nullptr) return;
+
+            delete _instance;
+            _instance = nullptr;
         }
 
-         static void delete_instance() {
-             if (_instance == nullptr) return;
-
-             delete _instance;
-             _instance = nullptr;
-         }
-
-        ~scheduler_impl() {
-            add_finish = true;
-            while (!(queue_are_empty() && add_finish));
+        static size_t max_threads() {
+            return std::thread::hardware_concurrency();
         }
 
-    }; // scheduler
+    }; // scheduler_impl
+
     scheduler_impl* scheduler_impl::_instance = nullptr;
 
+} // pcl_impl
+
+namespace pcl {
+
+    // CONTROLER FOR TASK SCHEDULER
     class scheduler {
-        static pcl::scheduler_impl* impl;
+        static pcl_impl::scheduler_impl* impl;
 
     public:
         template<typename function_t, typename... args_type>
@@ -206,7 +210,7 @@ namespace pcl {
         static void delete_scheduler() {
             if (impl) { 
                 impl->delete_scheduler();
-                pcl::scheduler_impl::delete_instance();
+                pcl_impl::scheduler_impl::delete_instance();
             }
         }
 
@@ -215,10 +219,13 @@ namespace pcl {
         };
 
         scheduler() {
-            impl = pcl::scheduler_impl::instance();
+            impl = pcl_impl::scheduler_impl::instance();
         }
-    };
+    }; // pcl::scheduler
+
+    pcl_impl::scheduler_impl* scheduler::impl = nullptr;
 
 } // pcl
+
 
 #endif

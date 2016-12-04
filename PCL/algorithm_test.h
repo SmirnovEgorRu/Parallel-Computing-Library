@@ -280,41 +280,30 @@ class algorithm_test {
         else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
     }
 
-
     // sort
     void pcl_sort_test(std::vector<size_t> &v) {
-        //size_t start_time = clock();
+        size_t start_time = clock();
 
         pcl::sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
 
-        //std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+        std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
-
     void std_sort_test(std::vector<size_t> &v) {
-        //size_t start_time = clock();
+        size_t start_time = clock();
 
         std::sort(v.begin(), v.end());
 
-        //std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+        std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
-
     void sort_test() {
         size_t size = 50000000;
-        srand(time(0));
         std::vector<size_t> v(size);
-        for (size_t i = 0; i < size; ++i)
-            v[i] = size - i;
 
-        size_t start_time = clock();
-        std::sort(v.begin(), v.end());
-        std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+        for (size_t i = 0; i < size; ++i) v[i] = size - i;
+        std_sort_test(v);
 
-        for (size_t i = 0; i < size; ++i)
-            v[i] = size - i;
-
-        start_time = clock();
-        pcl::sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
-        std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+        for (size_t i = 0; i < size; ++i) v[i] = size - i;
+        pcl_sort_test(v);
     }
 
 public:
@@ -329,7 +318,6 @@ public:
         min_element_test();
         max_element_test();
         sort_test();
-        //qsort_test();
     }
 };
 
