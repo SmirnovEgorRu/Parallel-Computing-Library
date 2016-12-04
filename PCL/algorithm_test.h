@@ -150,16 +150,181 @@ class algorithm_test {
         else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
     }
 
+    // fill
+    void pcl_fill_test(std::vector<double> &v, double value) {
+        size_t start_time = clock();
 
+        pcl::fill(v.begin(), v.end(), value);
+
+        std::cout << "pcl::fill time: " << (clock() - start_time) / 1000.0 << std::endl;
+    }
+    void std_fill_test(std::vector<double> &v, double value) {
+        size_t start_time = clock();
+
+        std::fill(v.begin(), v.end(), value);
+
+        std::cout << "std::fill time: " << (clock() - start_time) / 1000.0 << std::endl;
+    }
+    void fill_test() {
+        const size_t size = 150000000;
+
+        std::vector<double> v(size);
+        double fill_value = 1.0;
+
+        std_fill_test(v, fill_value);
+
+        fill_value = 0;
+        pcl_fill_test(v, fill_value);
+
+        if (v[size - 1] == fill_value) std::cout << "the test was completed successfully! values are equals." << std::endl << std::endl;
+        else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
+    }
+
+    // generate
+    double fun_generate() {
+        double number = 0;
+        while (number != 4000) number++;
+        return number;
+    }
+    template<typename function_t>
+    void pcl_generate_test(std::vector<double> &v, function_t& fun) {
+        size_t start_time = clock();
+
+        pcl::generate(v.begin(), v.end(), fun);
+
+        std::cout << "pcl::generate time: " << (clock() - start_time) / 1000.0 << std::endl;
+    }
+    template<typename function_t>
+    void std_generate_test(std::vector<double> &v, function_t& fun) {
+        size_t start_time = clock();
+
+        std::generate(v.begin(), v.end(), fun);
+
+        std::cout << "std::generate time: " << (clock() - start_time) / 1000.0 << std::endl;
+    }
+    void generate_test() {
+        const size_t size = 400000;
+
+        std::vector<double> v(size);
+
+        std_generate_test(v, std::bind(&algorithm_test::fun_generate, this));
+        pcl_generate_test(v, std::bind(&algorithm_test::fun_generate, this));
+
+        if (v[size - 1] == fun_generate()) std::cout << "the test was completed successfully! values are equals." << std::endl << std::endl;
+        else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
+    }
+
+    // min_element
+    auto pcl_min_element_test(std::vector<size_t> &v) {
+
+        size_t start_time = clock();
+
+        auto itr = pcl::min_element(v.begin(), v.end());
+
+        std::cout << "pcl::min_element time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return itr;
+    }
+    auto std_min_element_test(std::vector<size_t> &v) {
+
+        size_t start_time = clock();
+
+        auto itr = std::min_element(v.begin(), v.end());
+
+        std::cout << "std::min_element time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return itr;
+    }
+    void min_element_test() {
+        const size_t size = 100000000;
+
+        std::vector<size_t> v(size);
+        for (size_t i = 0; i < size; ++i)
+            v[i] = size - i;
+
+        auto std_itr = std_min_element_test(v);
+        auto pcl_itr = pcl_min_element_test(v);
+
+        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equals." << std::endl << std::endl;
+        else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
+    }
+
+    // max_element
+    auto pcl_max_element_test(std::vector<size_t> &v) {
+
+        size_t start_time = clock();
+
+        auto itr = pcl::max_element(v.begin(), v.end());
+
+        std::cout << "pcl::max_element time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return itr;
+    }
+    auto std_max_element_test(std::vector<size_t> &v) {
+
+        size_t start_time = clock();
+
+        auto itr = std::max_element(v.begin(), v.end());
+
+        std::cout << "std::max_element time: " << (clock() - start_time) / 1000.0 << std::endl;
+        return itr;
+    }
+    void max_element_test() {
+        const size_t size = 100000000;
+
+        std::vector<size_t> v(size);
+        for (size_t i = 0; i < size; ++i)
+            v[i] = size - i;
+
+        auto std_itr = std_max_element_test(v);
+        auto pcl_itr = pcl_max_element_test(v);
+
+        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equals." << std::endl << std::endl;
+        else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
+    }
+
+
+    // sort
+    void pcl_sort_test(std::vector<size_t> &v) {
+        size_t start_time = clock();
+
+        pcl::sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
+
+        std::cout << "pcl::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+    }
+    void std_sort_test(std::vector<size_t> &v) {
+        size_t start_time = clock();
+
+        std::sort(v.begin(), v.end());
+
+        std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
+    }
+
+    void sort_test() {
+        const size_t size = 100;
+
+        std::vector<size_t> v(size);
+        for (size_t i = 0; i < size; ++i)
+            v[i] = size - i;
+
+        std_sort_test(v);
+
+        for (size_t i = 0; i < size; ++i)
+            v[i] = size - i;
+
+        pcl_sort_test(v);
+    }
 
 
 public:
 
     void execute() {
-        for_each_test();
-        find_test();
-        count_test();
-        equal_test();
+        //for_each_test();
+        //find_test();
+        //count_test();
+        //equal_test();
+        //fill_test();
+        //generate_test();
+        //min_element_test();
+        //max_element_test();
+        sort_test();
     }
 };
 

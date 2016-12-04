@@ -20,22 +20,23 @@ namespace pcl {
         tasks.wait();
         return fun;
     }
-    /*template<typename iterator_t, typename function_t>
-    function_t for_each(iterator_t start, iterator_t end, function_t fun) {
-        pcl::scheduler tasks;
-        size_t n_threads = pcl::scheduler::max_threads();
-        size_t length = end - start;
-        size_t block_size = length/ n_threads;
-        if (block_size == 0)
-            std::for_each(start, end, fun);
-        else {
-            for (size_t i = 0; i < n_threads - 1; ++i)
-                tasks.add_task(std::bind(std::for_each, start + (i * block_size), start + ((i + 1) * block_size), fun));
-            tasks.add_task(std::bind(std::for_each, start + ((n_threads - 1) * block_size), end, fun));
-        }
-        tasks.wait();
-        return fun;
-    }*/
+    //template<typename iterator_t, typename function_t>
+    //function_t for_each(iterator_t start, iterator_t end, function_t fun) {
+    //    pcl::scheduler tasks;
+    //    size_t n_threads = pcl::scheduler::max_threads();
+    //    size_t length = end - start;
+    //    size_t block_size = length/ n_threads;
+    //    typedef typename std::result_of<function_t()>::type result_type;
+    //    if (block_size == 0)
+    //        std::for_each(start, end, std::function<result_type()>(fun));
+    //    else {
+    //        for (size_t i = 0; i < n_threads - 1; ++i)
+    //            tasks.add_task(std::bind(std::for_each, start + (i * block_size), start + ((i + 1) * block_size), std::function<result_type()>(fun)));
+    //        tasks.add_task(std::bind(std::for_each, start + ((n_threads - 1) * block_size), end, std::function<result_type()>(fun)));
+    //    }
+    //    tasks.wait();
+    //    return fun;
+    //}
 
     // find
     template<class iterator_t, class match_t>
@@ -49,12 +50,12 @@ namespace pcl {
     }
 
     template<typename iterator_t, typename match_t>
-    iterator_t find(iterator_t first, iterator_t last, const match_t& val){
+    iterator_t find(iterator_t first, iterator_t last, const match_t& val) {
         pcl::scheduler tasks;
 
         size_t n_threads = pcl::scheduler::max_threads();
         size_t length = last - first;
-        size_t block_size = length/ n_threads;
+        size_t block_size = length / n_threads;
 
         if (block_size == 0)
             return find_local(first, last, last, val);
@@ -77,7 +78,7 @@ namespace pcl {
         iterator_t min = last;
         iterator_t current = last;
         for (size_t i = 0; i < n_threads; ++i)
-            if ((current=promise[i].get_value()) < min) min = current;
+            if ((current = promise[i].get_value()) < min) min = current;
 
         return min;
     }
@@ -142,7 +143,7 @@ namespace pcl {
 
         for (size_t i = 0; i < n_threads - 1; ++i) {
             _1_iterator_t start_1 = first_1 + (i * block_size);
-            _1_iterator_t end_1   = first_1 + ((i + 1) * block_size);
+            _1_iterator_t end_1 = first_1 + ((i + 1) * block_size);
             _2_iterator_t start_2 = first_2 + ((i + 1) * block_size);
             promise[i] = tasks.add_task(equal_local<_1_iterator_t, _2_iterator_t>, start_1, end_1, start_2);
         }
@@ -173,6 +174,188 @@ namespace pcl {
         return true;
     }
 
+    // fill
+    template<typename iterator_t, typename match_t>
+    void fill(iterator_t first, iterator_t last, const match_t& val) {
+        pcl::scheduler tasks;
+
+        size_t n_threads = pcl::scheduler::max_threads();
+        size_t length = last - first;
+        size_t block_size = length / n_threads;
+
+        if (block_size == 0)
+            return fill_local(first, last, val);
+
+        for (size_t i = 0; i < n_threads - 1; ++i) {
+            iterator_t start = first + (i * block_size);
+            iterator_t end = first + ((i + 1) * block_size);
+            tasks.add_task(fill_local<iterator_t, match_t>, start, end, val);
+        }
+
+        iterator_t start = first + ((n_threads - 1) * block_size);
+        iterator_t end = last;
+        tasks.add_task(fill_local<iterator_t, match_t>, start, end, val);
+    }
+
+    template<class iterator_t, class match_t>
+    void fill_local(iterator_t first, iterator_t last, const match_t& val) {
+        while (first != last) {
+            *first = val;
+            ++first;
+        }
+    }
+
+    // generate
+    template<typename iterator_t, typename generator_t>
+    void generate(iterator_t first, iterator_t last, generator_t generator) {
+        pcl::scheduler tasks;
+
+        size_t n_threads = pcl::scheduler::max_threads();
+        size_t length = last - first;
+        size_t block_size = length / n_threads;
+
+        typedef typename std::result_of<generator_t()>::type result_type;
+
+        if (block_size == 0)
+            return generate_local(first, last, std::function<result_type()>(generator));
+
+        for (size_t i = 0; i < n_threads - 1; ++i) {
+            iterator_t start = first + (i * block_size);
+            iterator_t end = first + ((i + 1) * block_size);
+            tasks.add_task(generate_local<iterator_t, result_type>, start, end, std::function<result_type()>(generator));
+        }
+
+        iterator_t start = first + ((n_threads - 1) * block_size);
+        iterator_t end = last;
+        tasks.add_task(generate_local<iterator_t, result_type>, start, end, std::function<result_type()>(generator));
+    }
+
+    template<typename iterator_t, typename result_t>
+    void generate_local(iterator_t first, iterator_t last, std::function<result_t()> generator) {
+        while (first != last) {
+            *first = generator();
+            ++first;
+        }
+    }
+
+    // min_element
+    template<class iterator_t>
+    iterator_t min_element_local(iterator_t first, iterator_t last){
+        if (first == last) return last;
+        iterator_t smallest = first;
+
+        while (first != last) {
+            if (*first < *smallest)
+                smallest = first;
+            ++first;
+        }
+        return smallest;
+    }
+
+    template<typename iterator_t>
+    iterator_t min_element(iterator_t first, iterator_t last) {
+        pcl::scheduler tasks;
+
+        size_t n_threads = pcl::scheduler::max_threads();
+        size_t length = last - first;
+        size_t block_size = length / n_threads;
+
+        if (block_size == 0)
+            return min_element_local(first, last);
+
+        std::vector<pcl::promise_value<iterator_t> > promise(n_threads);
+
+        for (size_t i = 0; i < n_threads - 1; ++i) {
+            iterator_t start = first + (i * block_size);
+            iterator_t end = first + ((i + 1) * block_size);
+            promise[i] = tasks.add_task(min_element_local<iterator_t>, start, end);
+        }
+
+        iterator_t start = first + ((n_threads - 1) * block_size);
+        iterator_t end = last;
+        promise[n_threads - 1] = tasks.add_task(min_element_local<iterator_t>, start, end);
+
+        tasks.wait();
+
+        iterator_t min = first;
+        iterator_t current;
+        for (size_t i = 0; i < n_threads; ++i)
+            if (*(current = promise[i].get_value()) < *min) min = current;
+
+        return min;
+    }
+
+    // max_element
+    template<class iterator_t>
+    iterator_t max_element_local(iterator_t first, iterator_t last) {
+        if (first == last) return last;
+        iterator_t largest = first;
+
+        while (first != last) {
+            if (*first > *largest)
+                largest = first;
+            ++first;
+        }
+        return largest;
+    }
+
+    template<typename iterator_t>
+    iterator_t max_element(iterator_t first, iterator_t last) {
+        pcl::scheduler tasks;
+
+        size_t n_threads = pcl::scheduler::max_threads();
+        size_t length = last - first;
+        size_t block_size = length / n_threads;
+
+        if (block_size == 0)
+            return max_element_local(first, last);
+
+        std::vector<pcl::promise_value<iterator_t> > promise(n_threads);
+
+        for (size_t i = 0; i < n_threads - 1; ++i) {
+            iterator_t start = first + (i * block_size);
+            iterator_t end = first + ((i + 1) * block_size);
+            promise[i] = tasks.add_task(max_element_local<iterator_t>, start, end);
+        }
+
+        iterator_t start = first + ((n_threads - 1) * block_size);
+        iterator_t end = last;
+        promise[n_threads - 1] = tasks.add_task(max_element_local<iterator_t>, start, end);
+
+        tasks.wait();
+
+        iterator_t max = first;
+        iterator_t current;
+        for (size_t i = 0; i < n_threads; ++i)
+            if (*(current = promise[i].get_value()) > *max) max = current;
+
+        return max;
+    }
+
+    // sort
+    template<typename iterator_t, typename value_t>
+    void sort(iterator_t first, iterator_t last) {
+        if (last - first <= 1) return;
+        pcl::scheduler tasks;
+
+        auto mid = first + (last - first) / 2;
+        const auto mid_value = *mid;
+
+        std::swap(*mid, *(last-1));
+        auto p = std::partition(first, last, [&](const value_t& value) { return value < mid_value; });
+        std::swap(*p, *(last -1));
+
+
+        const size_t max_size = 1000;
+        if (last - first > max_size) {
+            tasks.add_task(sort<iterator_t, value_t>, first, p);
+            sort<iterator_t, value_t>(p+1, last);
+        }
+        else {
+            sort<iterator_t, value_t>(first, p);
+            sort<iterator_t, value_t>(p + 1, last);
+        }
+    }
 }
 
 #endif
