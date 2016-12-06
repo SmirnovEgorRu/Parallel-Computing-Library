@@ -32,11 +32,11 @@ void qsort(std::vector<int>& arr, int b, int e)
 
 
 int main() {
-    scheduler_test y;
-    y.execute();
+    //scheduler_test y;
+    //y.execute();
 
-    word_counter_test x;
-    x.execute();
+    //word_counter_test x;
+    //x.execute();
 
     algorithm_test algorithm;
     algorithm.execute();

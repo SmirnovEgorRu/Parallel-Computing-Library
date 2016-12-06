@@ -113,7 +113,8 @@ namespace pcl_impl {
         join_quard join_threads;
 
         void execute_tasks(size_t index) {
-            static std::atomic_ullong steal_number = 0;
+            //std::atomic_ullong steal_number = 0;
+            size_t steal_number = 0;
 
             while (!done || !queue_are_empty()) {
                 task_t task;

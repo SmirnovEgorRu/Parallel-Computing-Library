@@ -3,6 +3,10 @@
 
 #include "scheduler.h"
 #include <algorithm>
+#include <future>
+#include <thread>
+
+
 
 namespace pcl {
 
@@ -25,13 +29,13 @@ namespace pcl {
     //    size_t n_threads = pcl::scheduler::max_threads();
     //    size_t length = end - start;
     //    size_t block_size = length/ n_threads;
-    //    typedef typename std::result_of<function_t()>::type result_type;
+    //    typedef typename std::result_of<function_t(iterator_t)>::type result_type;
     //    if (block_size == 0)
-    //        std::for_each(start, end, std::function<result_type()>(fun));
+    //        std::for_each(start, end, std::function<result_type(iterator_t)>(fun));
     //    else {
     //        for (size_t i = 0; i < n_threads - 1; ++i)
-    //            tasks.add_task(std::bind(std::for_each, start + (i * block_size), start + ((i + 1) * block_size), std::function<result_type()>(fun)));
-    //        tasks.add_task(std::bind(std::for_each, start + ((n_threads - 1) * block_size), end, std::function<result_type()>(fun)));
+    //            tasks.add_task(std::bind(std::for_each, start + (i * block_size), start + ((i + 1) * block_size), std::function<result_type(iterator_t)>(fun)));
+    //        tasks.add_task(std::bind(std::for_each, start + ((n_threads - 1) * block_size), end, std::function<result_type(iterator_t)>(fun)));
     //    }
     //    tasks.wait();
     //    return fun;
@@ -277,9 +281,62 @@ namespace pcl {
     // sort
     template<typename iterator_t, typename value_t>
     void sort(iterator_t first, iterator_t last) {
-        pcl_impl::sort_impl<iterator_t, value_t>(first, last);
+        pcl::sort_impl<iterator_t, value_t>(first, last);
         pcl::scheduler::wait();
     }
+
+    template<typename iterator_t, typename value_t>
+    void sort_impl(iterator_t first, iterator_t last) {
+        if (last - first <= 1) return;
+
+        pcl::scheduler tasks;
+
+        auto mid = first + (last - first) / 2;
+        const auto mid_value = *mid;
+
+        std::swap(*mid, *(last - 1));
+        auto p = std::partition(first, last, [&](const value_t& value) { return value < mid_value; });
+        std::swap(*p, *(last - 1));
+
+        const size_t max_size = 12000;
+        if (last - first > max_size) {
+            tasks.add_task(sort_impl<iterator_t, value_t>, first, p);
+            tasks.add_task(sort_impl<iterator_t, value_t>, p + 1, last);
+            //sort_impl<iterator_t, value_t>(p + 1, last);
+        }
+        else {
+            sort_impl<iterator_t, value_t>(first, p);
+            sort_impl<iterator_t, value_t>(p + 1, last);
+        }
+    }
+
+    template<typename iterator_t, typename value_t>
+    int naive_quick_sort(iterator_t begin, iterator_t end) {
+        auto const sz = end - begin;
+        if (sz <= 1) return 0;
+
+        auto pivot = begin + sz / 2;
+        auto const pivot_v = *pivot;
+
+        std::swap(*pivot, *(end - 1));
+        auto p = std::partition(begin, end, [&](const value_t& a) { return a < pivot_v; });
+        std::swap(*p, *(end - 1));
+
+        if (sz > 4096) {
+            auto left = std::async(std::launch::async, [&]() {
+                return naive_quick_sort<std::vector<size_t>::iterator, size_t>(begin, p);
+            });
+            naive_quick_sort<std::vector<size_t>::iterator, size_t>(p + 1, end);
+        }
+        else {
+            naive_quick_sort<std::vector<size_t>::iterator, size_t>(begin, p);
+            naive_quick_sort<std::vector<size_t>::iterator, size_t>(p + 1, end);
+        }
+        return 0;
+    }
+
+
+
 }
 
 namespace pcl_impl {
