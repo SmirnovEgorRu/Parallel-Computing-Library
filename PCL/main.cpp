@@ -11,6 +11,7 @@
 #include "algorithm_test.h"
 #include "queue_test.h"
 #include "vector_test.h"
+#include "parallel_for_test.h"
 
 void qsort(std::vector<int>& arr, int b, int e)
 {
@@ -46,8 +47,11 @@ int main() {
     //queue_test queue;
     //queue.execute();
 
-    vector_test vector;
-    vector.execute();
+    //vector_test vector;
+    //vector.execute();
+
+    parallel_for_test prl_for;
+    prl_for.execute();
 
     pcl::scheduler::delete_scheduler();
     std::cout << "Press \"Enter\" to exit"<<std::endl;

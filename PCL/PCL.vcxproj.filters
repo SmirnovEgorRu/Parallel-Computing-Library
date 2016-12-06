@@ -41,9 +41,6 @@
     <ClInclude Include="algorithm_test.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="my_queue.h">
-      <Filter>Заголовочные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="queue.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
@@ -54,6 +51,12 @@
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
     <ClInclude Include="vector_test.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="parallel_for.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="parallel_for_test.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>

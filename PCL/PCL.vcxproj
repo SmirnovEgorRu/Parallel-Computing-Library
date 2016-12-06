@@ -115,6 +115,8 @@
   <ItemGroup>
     <ClInclude Include="algorithm.h" />
     <ClInclude Include="algorithm_test.h" />
+    <ClInclude Include="parallel_for.h" />
+    <ClInclude Include="parallel_for_test.h" />
     <ClInclude Include="queue_test.h" />
     <ClInclude Include="scheduler_test.h" />
     <ClInclude Include="sorter.h" />
@@ -122,7 +124,6 @@
     <ClInclude Include="vector_test.h" />
     <ClInclude Include="word_counter.h" />
     <ClInclude Include="queue.h" />
-    <ClInclude Include="my_queue.h" />
     <ClInclude Include="scheduler.h" />
     <ClInclude Include="word_counter_test.h" />
   </ItemGroup>

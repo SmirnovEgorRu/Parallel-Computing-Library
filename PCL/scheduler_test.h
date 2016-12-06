@@ -5,12 +5,12 @@
 #include <iostream>
 
 class scheduler_test {
-    const size_t n_itration = 100000000;
+    const size_t n_iteration = 100000000;
 
     size_t fun_with_arg(int x, int y) {
         size_t sum = 0;
 
-        for (size_t i = 0; i < n_itration; ++i)
+        for (size_t i = 0; i < n_iteration; ++i)
             sum+=x+y;
 
         return sum;
@@ -41,7 +41,7 @@ public:
             return;
         }
 
-        if (sum == n_tasks*n_itration)
+        if (sum == n_tasks*n_iteration)
             std::cout << "the test was completed successfully!" << std::endl;
         else
             std::cout << "incorrect value!" << std::endl << "the test is failed!" << std::endl;
