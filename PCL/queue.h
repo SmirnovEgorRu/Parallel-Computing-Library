@@ -2,7 +2,6 @@
 #define _PCL_QUEUE_HEADER_
 
 #include <queue>
-#include <memory>
 #include <mutex>
 #include <condition_variable>
 

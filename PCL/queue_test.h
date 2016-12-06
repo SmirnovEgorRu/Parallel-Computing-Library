@@ -7,8 +7,6 @@
 
 class queue_test {
 
-
-
 public:
     void execute() {
         const int n = 100000;

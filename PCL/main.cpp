@@ -10,6 +10,7 @@
 #include "word_counter_test.h"
 #include "algorithm_test.h"
 #include "queue_test.h"
+#include "vector_test.h"
 
 void qsort(std::vector<int>& arr, int b, int e)
 {
@@ -42,8 +43,11 @@ int main() {
     //algorithm_test algorithm;
     //algorithm.execute();
 
-    queue_test queue;
-    queue.execute();
+    //queue_test queue;
+    //queue.execute();
+
+    vector_test vector;
+    vector.execute();
 
     pcl::scheduler::delete_scheduler();
     std::cout << "Press \"Enter\" to exit"<<std::endl;
