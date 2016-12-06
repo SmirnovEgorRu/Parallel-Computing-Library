@@ -17,6 +17,7 @@ class scheduler_test {
     }
 
 public:
+
     void execute() {
         const size_t n_tasks = 10000;
         size_t sum = 0;

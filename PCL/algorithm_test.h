@@ -295,45 +295,31 @@ class algorithm_test {
 
         std::cout << "std::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
     }
-    void asc_sort_test(std::vector<size_t> &v) {
-        size_t start_time = clock();
-
-        pcl::naive_quick_sort<std::vector<size_t>::iterator, size_t>(v.begin(), v.end());
-
-        std::cout << "asc::sort time: " << (clock() - start_time) / 1000.0 << std::endl;
-    }
-
-
     void sort_test() {
-        size_t size = 10000000;
+        size_t size = 1000000;
         std::vector<size_t> v(size);
 
         pcl::scheduler::delete_scheduler();
 
-        //for (size_t i = 0; i < size; ++i) v[i] = size - i;
-        for (size_t i = 0; i < size; ++i) v[i] = rand();
+        for (size_t i = 0; i < size; ++i) v[i] = size - i;
         std_sort_test(v);
 
-        //for (size_t i = 0; i < size; ++i) v[i] = size - i;
-        for (size_t i = 0; i < size; ++i) v[i] = rand();
+        for (size_t i = 0; i < size; ++i) v[i] = size - i;
         pcl_sort_test(v);
-
         pcl::scheduler::delete_scheduler();
-        for (size_t i = 0; i < size; ++i) v[i] = rand();
-        asc_sort_test(v);
     }
 
 public:
 
     void execute() {
-        //for_each_test();
-        //find_test();
-        //count_test();
-        //equal_test();
-        //fill_test();
-        //generate_test();
-        //min_element_test();
-        //max_element_test();
+        for_each_test();
+        find_test();
+        count_test();
+        equal_test();
+        fill_test();
+        generate_test();
+        min_element_test();
+        max_element_test();
         sort_test();
     }
 };

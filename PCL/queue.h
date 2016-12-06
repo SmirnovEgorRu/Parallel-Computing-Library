@@ -1,180 +1,158 @@
 #ifndef _PCL_QUEUE_HEADER_
 #define _PCL_QUEUE_HEADER_
 
+#include <queue>
+#include <memory>
 #include <mutex>
+#include <condition_variable>
+
+namespace pcl {
+
+    template <typename T>
+    class queue {
+    private:
+        mutable std::mutex mut;
+        std::queue<T> data_queue;
+        std::condition_variable data_cond;
+    public:
+        queue() {}
+        queue(queue const& other) {
+            std::lock_guard<std::mutex> lk(mut);
+            data_queue = other.data_queue;
+        }
+
+        void push(T new_value) {
+            std::lock_guard<std::mutex> lk(mut);
+            data_queue.push(new_value);
+            data_cond.notify_one();
+        }
+
+        void wait_and_pop(T& value) {
+            std::lock_guard<std::mutex> lk(mut);
+            data_cond.wait(lk, [this] {return!data_queue.empty(); });
+            value = data_queue.front();
+            data_queue.pop();
+        }
+
+        std::shared_ptr<T> wait_and_pop() {
+            std::lock_guard<std::mutex> lk(mut);
+            data_cond.wait(lk, [this] {return !data_queue.empty(); });
+            std::shared_ptr<T> res(std::make_shared<T>(data_queue.front()));
+            data_queue.pop();
+            return res;
+        }
+
+        bool try_pop(T& value) {
+            std::lock_guard<std::mutex> lk(mut);
+            if (data_queue.empty())
+                return false;
+
+            value = std::move(data_queue.front());
+
+            data_queue.pop();
+            return true;
+        }
+
+        std::shared_ptr<T> try_pop() {
+            std::lock_guard<std::mutex> lk(mut);
+            if (data_queue.empty())
+                return std::shared_ptr<T>();
+            std::shared_ptr<T> res(std::make_shared<T>(data_queue.front()));
+            data_queue.pop();
+            return res;
+        }
+
+        bool empty() const {
+            std::lock_guard<std::mutex> lk(mut);
+            return data_queue.empty();
+        }
+
+    }; // queue
 
 
-// my_queue
 
-//namespace pcl {
-//    template<typename T>
-//    class container_queue {
-//    private:
-//        T value;
-//        container_queue<T>* next;
-//    public:
-//        container_queue(const T& new_value, container_queue<T>* prev):
-//            value(std::move(new_value))
-//        { 
-//            next = nullptr;
-//            prev->next = this; 
-//        }
-//
-//        container_queue(const T& new_value):
-//            value(std::move(new_value))
-//        {
-//            next = nullptr;
-//        }
-//
-//        //container_queue(T new_value) :
-//        //    value(std::move(new_value))
-//        //{
-//        //    next = nullptr;
-//        //}
-//
-//
-//        //std::shared_ptr<T> get_value() { return value; }
-//        T get_value() { return value; }
-//
-//        container_queue* get_next() { return next; }
-//    }; // container_queue
-//
-//    template<typename T>
-//    class list {
-//    private:
-//        mutable size_t list_size;
-//        mutable std::mutex this_mutex;
-//        container_queue<T>* head;
-//        container_queue<T>* tail;
-//    public:
-//        void push(const T& value);
-//        void push(T& value);
-//
-//        bool pop(T& value);
-//
-//        void front(T* T_ptr) const;
-//        std::shared_ptr<T> front() const;
-//
-//
-//        void back(T* T_ptr) const;
-//
-//
-//        size_t size() const;
-//        bool empty() const;
-//
-//        list() : head(nullptr), tail(nullptr), list_size(0) {}
-//        ~list();
-//
-//        list* operator=(const list& rhs) = delete;
-//        list(const list &copy_list) = delete;
-//    }; // list
-//
-//
-//    template<typename T>
-//    list<T>::~list() {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        container_queue<T>* tmp;
-//
-//        while (head) {
-//            tmp = head->get_next();
-//            delete head;
-//            head = tmp;
-//        }
-//        tail = nullptr;
-//    }
-//
-//    template<typename T>
-//    bool list<T>::pop(T& value) {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        if (list_size == 0)
-//            return false;
-//
-//        if (head == tail) tail = nullptr;
-//
-//        container_queue<T>* tmp = head->get_next();
-//        value = head->get_value();
-//        delete head;
-//        head = tmp;
-//        --list_size;
-//        return true;
-//    }
-//
-//    template<typename T>
-//    void list<T>::push(const T& value) {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//
-//        if (list_size == 0) {
-//            head = new container_queue<T>(value);        // error
-//            tail = head;
-//        }
-//        else
-//            tail = new container_queue<T>(std::move(value), tail);
-//
-//        ++list_size;
-//    }
-//
-//    template<typename T>
-//    void list<T>::push(T& value) {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//
-//        if (list_size == 0) {
-//            head = new container_queue<T>(value);        // error
-//            tail = head;
-//        }
-//        else
-//            tail = new container_queue<T>(std::move(value), tail);
-//
-//        ++list_size;
-//    }
-//
-//
-//    template<typename T>
-//    size_t list<T>::size() const {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        return list_size;
-//    }
-//
-//    template<typename T>
-//    bool list<T>::empty() const {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        return head == nullptr;
-//    }
-//
-//    template<typename T>
-//    void list<T>::front(T* T_ptr) const {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        
-//        if (head != nullptr)
-//            *T_ptr = head->get_value();
-//        else
-//            T_ptr = nullptr;
-//    }
-//
-//    template<typename T>
-//    std::shared_ptr<T> list<T>::front() const {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        std::shared_ptr<T> ptr;
-//
-//        if (head != nullptr)
-//            ptr = std::shared_ptr<T>{ new T(head->get_value()) };
-//        else
-//            ptr = nullptr;
-//
-//        return ptr;
-//    }
-//
-//
-//    template<typename T>
-//    void list<T>::back(T* T_ptr) const {
-//        std::lock_guard<std::mutex> guard(this_mutex);
-//        
-//        if (head == nullptr)
-//            T_ptr = nullptr;
-//        else
-//            *T_ptr = head->get_value();
-//    }
-//
+    //template <typename T>
+    //class queue {
+    //private:
+    //    struct node {
+    //        std::shared_ptr<T> data;
+    //        std::unique_ptr<node> next;
+    //    };
 
-} // pcl
+    //    std::mutex head_mutex;
+    //    std::unique_ptr<node> head;
+    //    std::mutex tail_mutex;
+    //    node* tail;
+    //    std::condition_variable data_cond;
+
+    //    node* get_tail() {
+    //        std::lock_guard<std::mutex> tail_lock(tail_mutex);
+    //        return tail;
+    //    }
+
+    //    std::unique_ptr<node> pop_head() {
+    //        std::unique_ptr<node> old_head = std::move(head);
+    //        head = std::move(old_head->next);
+    //        return old_head;
+    //    }
+
+    //    std::unique_ptr<node> try_pop_head() {
+    //        std::lock_guard<std::mutex> head_lock(head_mutex);
+    //        if (head.get() == get_tail()) {
+    //            return std::unique_ptr<node>();
+    //        }
+    //        return pop_head();
+    //    }
+
+    //    std::unique_ptr<node> try_pop_head(T& value) {
+    //        std::lock_guard<std::mutex> head_lock(head_mutex);
+    //        if (head.get() == get_tail()) {
+    //            return std::unique_ptr<node>();
+    //        }
+    //        value = std::move(*head->data);
+    //        return pop_head();
+    //    }
+
+    //public:
+    //    queue(): head(new node), tail(head.get()){}
+    //    queue(const queue& other) = delete;
+    //    queue& operator= (const queue& other) = delete;
+    //    
+
+    //    //std::shared_ptr<T> wait_and_pop();
+    //    //void wait_and_pop(T& value);
+
+    //    void push(T new_value) {
+    //        std::shared_ptr<T> new_data(std::make_shared<T>(std::move(new_value)));
+
+    //        std::unique_ptr<node> p(new node);
+    //        {
+    //            std::lock_guard<std::mutex> tail_lock(tail_mutex);
+    //            tail->data = new_data;
+    //            node* const new_tail = p.get();
+    //            tail->next = std::move(p);
+    //            tail = new_tail;
+    //        }
+    //        data_cond.notify_one();
+    //    }
+
+    //    std::shared_ptr<T> try_pop() {
+    //        std::unique_ptr<node> old_head = try_pop_head();
+    //        return old_head ? old_head->data::std::shared_ptr<T>();
+    //    }
+
+    //    bool try_pop(T& value) {
+    //        std::unique_ptr<node> const old_head = try_pop_head(value);
+    //        return (bool)old_head;
+    //    }
+
+    //    bool empty() {
+    //        std::lock_guard<std::mutex> head_lock(head_mutex);
+    //        return (head.get() == get_tail());
+    //    }
+
+    //};
+
+}
 
 #endif

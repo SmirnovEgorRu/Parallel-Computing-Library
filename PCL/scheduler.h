@@ -1,10 +1,11 @@
 #ifndef _PCL_SCHEDULER_HEADER_
 #define _PCL_SCHEDULER_HEADER_
 
-#include "ts_queue.h"
-#include <thread> 
-#include <future> 
-#include <vector> 
+#include <thread>
+#include <future>
+#include <vector>
+#include <deque>
+#include <mutex>
 
 namespace pcl {
 
@@ -27,9 +28,33 @@ namespace pcl {
 
 }
 
-
-
 namespace pcl_impl {
+
+    // QUEUE FOR TASKS
+    template <typename T>
+    class tasks_queue {
+        std::deque<T> container;
+        mutable std::mutex queue_mutex;
+
+    public:
+        void push(T data) {
+            std::lock_guard<std::mutex> lock(queue_mutex);
+            container.push_front(std::move(data));
+        }
+
+        bool try_pop(T& data) {
+            std::lock_guard<std::mutex> lock(queue_mutex);
+            if (container.empty())
+                return false;
+            data = std::move(container.front());
+            container.pop_front();
+            return true;
+        }
+
+        tasks_queue() = default;
+        tasks_queue(const tasks_queue& other) = delete;
+        tasks_queue& operator= (const tasks_queue& other) = delete;
+    }; // queue
 
     // PROVIDE JOINING OF ALL THE THREADS
     class join_quard {
@@ -101,7 +126,7 @@ namespace pcl_impl {
     private:
         static scheduler_impl* _instance;
 
-        std::vector<std::unique_ptr<pcl::queue<task_t> > > queues;
+        std::vector<std::unique_ptr<pcl_impl::tasks_queue<task_t>>> queues;
         std::vector<std::thread> threads;
 
         size_t n_threads;
@@ -112,24 +137,22 @@ namespace pcl_impl {
 
         join_quard join_threads;
 
-        void execute_tasks(size_t index) {
-            //std::atomic_ullong steal_number = 0;
+        void execute_tasks(const size_t index) {
             size_t steal_number = 0;
 
             while (!done || !queue_are_empty()) {
                 task_t task;
                 if (finish_count == prepare_count) std::this_thread::yield();
-                else if (queues[index]->try_pop(task)) {
-                    task();
-                    ++finish_count;
-                }
                 else {
-                    if (queues[(steal_number++) % n_threads]->try_pop(task)) {
-                        task();
-                        ++finish_count;
-                    }
+                    if (queues[index]->try_pop(task)) call_task(task);
+                    else if (queues[(steal_number++) % n_threads]->try_pop(task)) call_task(task);
                 }
             }
+        }
+
+        void call_task(task_t &task) {
+            task();
+            ++finish_count;
         }
 
         bool queue_are_empty() {
@@ -139,7 +162,7 @@ namespace pcl_impl {
 
         scheduler_impl() : n_threads(max_threads()), join_threads(threads) {
             for (size_t i = 0; i < n_threads; ++i)
-                queues.push_back(std::unique_ptr<pcl::queue<task_t> >(new pcl::queue<task_t>));
+                queues.push_back(std::unique_ptr<pcl_impl::tasks_queue<task_t> >(new pcl_impl::tasks_queue<task_t>));
             for (size_t i = 0; i < n_threads; ++i)
                 threads.push_back(std::thread(&pcl_impl ::scheduler_impl::execute_tasks, this, i));
         }
@@ -155,7 +178,7 @@ namespace pcl_impl {
             std::packaged_task<result_type()> task(std::bind(function, std::forward<args_type>(args)...));
             std::future<result_type> res(task.get_future());
 
-            queues[add_number++ % n_threads]->push(std::move(task));
+            queues[(add_number++) % n_threads]->push(std::move(task));
             return pcl::promise_value<result_type>(std::move(res));
         }
 
@@ -164,9 +187,11 @@ namespace pcl_impl {
         }
 
         void delete_scheduler() {
-             done = true;
-             for (size_t i = 0; i < n_threads; ++i)
-                if (threads[i].joinable()) threads[i].join();
+            if (_instance) {
+                done = true;
+                for (size_t i = 0; i < n_threads; ++i)
+                    if (threads[i].joinable()) threads[i].join();
+            }
         }
 
         static scheduler_impl* instance() {
@@ -223,7 +248,6 @@ namespace pcl {
             impl = pcl_impl::scheduler_impl::instance();
         }
     }; // pcl::scheduler
-
     pcl_impl::scheduler_impl* scheduler::impl = nullptr;
 
 } // pcl

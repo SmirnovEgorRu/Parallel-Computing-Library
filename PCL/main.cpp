@@ -38,11 +38,10 @@ int main() {
     //word_counter_test x;
     //x.execute();
 
-    algorithm_test algorithm;
-    algorithm.execute();
+    //algorithm_test algorithm;
+    //algorithm.execute();
 
     pcl::scheduler::delete_scheduler();
-
     std::cout << "Press \"Enter\" to exit"<<std::endl;
     std::getchar();
     return 0;
