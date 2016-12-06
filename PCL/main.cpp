@@ -9,6 +9,7 @@
 #include "scheduler_test.h"
 #include "word_counter_test.h"
 #include "algorithm_test.h"
+#include "queue_test.h"
 
 void qsort(std::vector<int>& arr, int b, int e)
 {
@@ -40,6 +41,9 @@ int main() {
 
     //algorithm_test algorithm;
     //algorithm.execute();
+
+    queue_test queue;
+    queue.execute();
 
     pcl::scheduler::delete_scheduler();
     std::cout << "Press \"Enter\" to exit"<<std::endl;
