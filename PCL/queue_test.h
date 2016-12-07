@@ -35,10 +35,10 @@ public:
                     return;
                 }
             }
-            std::cout << "the test was completed successfully!" << std::endl;
+            std::cout << "the test was completed successfully!" << std::endl << std::endl;
         }
         catch (...) {
-            std::cout << "some exception was caught!" << std::endl << "the test is failed!" << std::endl;
+            std::cout << "some exception was caught!" << std::endl << "the test is failed!" << std::endl << std::endl;
             return;
         }
     }

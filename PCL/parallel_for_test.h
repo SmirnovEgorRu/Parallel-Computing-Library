@@ -51,7 +51,7 @@ class parallel_for_test {
 public:
     void execute() {
         const int n_vectors = 2000;
-        const int size = 5000;
+        const int size = 1000;
         std_for_test(n_vectors, size);
         pcl_parallel_for_test(n_vectors, size);
         std::cout << std::endl;

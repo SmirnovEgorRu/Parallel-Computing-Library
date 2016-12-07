@@ -35,20 +35,20 @@ void qsort(std::vector<int>& arr, int b, int e)
 
 
 int main() {
-    //scheduler_test y;
-    //y.execute();
+    scheduler_test y;
+    y.execute();
 
-    //word_counter_test x;
-    //x.execute();
+    word_counter_test x;
+    x.execute();
 
-    //algorithm_test algorithm;
-    //algorithm.execute();
+    algorithm_test algorithm;
+    algorithm.execute();
 
-    //queue_test queue;
-    //queue.execute();
+    queue_test queue;
+    queue.execute();
 
-    //vector_test vector;
-    //vector.execute();
+    vector_test vector;
+    vector.execute();
 
     parallel_for_test prl_for;
     prl_for.execute();

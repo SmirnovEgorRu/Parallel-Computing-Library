@@ -142,11 +142,15 @@ namespace pcl_impl {
 
             while (!done || !queue_are_empty()) {
                 task_t task;
-                if (finish_count == prepare_count) std::this_thread::yield();
-                else {
-                    if (queues[index]->try_pop(task)) call_task(task);
-                    else if (queues[(steal_number++) % n_threads]->try_pop(task)) call_task(task);
-                }
+
+                if (queue_are_empty())
+                    std::this_thread::yield();
+
+                else if (queues[index]->try_pop(task))
+                    call_task(task);
+
+                else if (queues[(steal_number++) % n_threads]->try_pop(task))
+                    call_task(task);
             }
         }
 
@@ -168,11 +172,16 @@ namespace pcl_impl {
         }
 
     public:
+
+
         template<typename function_t, typename... args_type>
-        pcl::promise_value <typename std::result_of<function_t(args_type...)>::type> add_task(function_t function, args_type &&... args) {
+        pcl::promise_value <typename std::result_of<function_t(args_type...)>::type> 
+                                add_task(function_t function, args_type &&... args) {
+
             typedef typename std::result_of<function_t(args_type...)>::type result_type;
 
             static std::atomic_ullong add_number = 0;
+
             ++prepare_count;
 
             std::packaged_task<result_type()> task(std::bind(function, std::forward<args_type>(args)...));
@@ -181,6 +190,7 @@ namespace pcl_impl {
             queues[(add_number++) % n_threads]->push(std::move(task));
             return pcl::promise_value<result_type>(std::move(res));
         }
+
 
         void wait() {
             while (!(queue_are_empty())) std::this_thread::yield();

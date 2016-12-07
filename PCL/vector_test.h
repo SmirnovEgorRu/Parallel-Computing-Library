@@ -28,7 +28,7 @@ public:
 
             if (!parallel_vector.empty())
                 std::cout << "incorrect value!" << std::endl << "the test is failed!" << std::endl;
-            else std::cout << "the test was completed successfully!" << std::endl;
+            else std::cout << "the test was completed successfully!" << std::endl << std::endl;;
         }
         catch (...) {
             std::cout << "some exception was caught!" << std::endl << "the test is failed!" << std::endl;

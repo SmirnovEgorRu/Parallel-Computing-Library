@@ -82,8 +82,8 @@ class algorithm_test {
         auto std_itr = std_find_test(v, find_value);
         auto pcl_itr = pcl_find_test(v, find_value);
 
-        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equals." << std::endl << std::endl;
-        else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
+        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equal." << std::endl << std::endl;
+        else std::cout << "the test is failed! test iterators are not equal." << std::endl << std::endl;
     }
 
     // count
@@ -115,7 +115,7 @@ class algorithm_test {
         size_t std_sum = std_count_test(v, find_value);
         size_t pcl_sum = pcl_count_test(v, find_value);
 
-        if (pcl_sum == std_sum) std::cout << "the test was completed successfully! amounts are equals." << std::endl << std::endl;
+        if (pcl_sum == std_sum) std::cout << "the test was completed successfully! amounts are equal." << std::endl << std::endl;
         else std::cout << "the test is failed! amounts are not equals." << std::endl << std::endl;
     }
 
@@ -146,8 +146,8 @@ class algorithm_test {
         bool std_bool = std_equal_test(v);
         bool pcl_bool = pcl_equal_test(v);
 
-        if (pcl_bool == std_bool) std::cout << "the test was completed successfully! values are equals." << std::endl << std::endl;
-        else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
+        if (pcl_bool == std_bool) std::cout << "the test was completed successfully! values are equal." << std::endl << std::endl;
+        else std::cout << "the test is failed! values are not equal." << std::endl << std::endl;
     }
 
     // fill
@@ -176,8 +176,8 @@ class algorithm_test {
         fill_value = 0;
         pcl_fill_test(v, fill_value);
 
-        if (v[size - 1] == fill_value) std::cout << "the test was completed successfully! values are equals." << std::endl << std::endl;
-        else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
+        if (v[size - 1] == fill_value) std::cout << "the test was completed successfully! values are equal." << std::endl << std::endl;
+        else std::cout << "the test is failed! values are not equal." << std::endl << std::endl;
     }
 
     // generate
@@ -210,8 +210,8 @@ class algorithm_test {
         std_generate_test(v, std::bind(&algorithm_test::fun_generate, this));
         pcl_generate_test(v, std::bind(&algorithm_test::fun_generate, this));
 
-        if (v[size - 1] == fun_generate()) std::cout << "the test was completed successfully! values are equals." << std::endl << std::endl;
-        else std::cout << "the test is failed! values are not equals." << std::endl << std::endl;
+        if (v[size - 1] == fun_generate()) std::cout << "the test was completed successfully! values are equal." << std::endl << std::endl;
+        else std::cout << "the test is failed! values are not equal." << std::endl << std::endl;
     }
 
     // min_element
@@ -243,8 +243,8 @@ class algorithm_test {
         auto std_itr = std_min_element_test(v);
         auto pcl_itr = pcl_min_element_test(v);
 
-        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equals." << std::endl << std::endl;
-        else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
+        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equal." << std::endl << std::endl;
+        else std::cout << "the test is failed! test iterators are not equal." << std::endl << std::endl;
     }
 
     // max_element
@@ -276,8 +276,8 @@ class algorithm_test {
         auto std_itr = std_max_element_test(v);
         auto pcl_itr = pcl_max_element_test(v);
 
-        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equals." << std::endl << std::endl;
-        else std::cout << "the test is failed! test iterators are not equals." << std::endl << std::endl;
+        if (*pcl_itr == *std_itr) std::cout << "the test was completed successfully! iterators are equal." << std::endl << std::endl;
+        else std::cout << "the test is failed! test iterators are not equal." << std::endl << std::endl;
     }
 
     // sort
@@ -313,14 +313,14 @@ public:
 
     void execute() {
         for_each_test();
-        find_test();
-        count_test();
+        //find_test();
+        //count_test();
         equal_test();
-        fill_test();
+        //fill_test();
         generate_test();
         min_element_test();
         max_element_test();
-        sort_test();
+        /*sort_test();*/
     }
 };
 
