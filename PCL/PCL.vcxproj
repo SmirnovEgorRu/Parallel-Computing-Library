@@ -115,6 +115,8 @@
   <ItemGroup>
     <ClInclude Include="algorithm.h" />
     <ClInclude Include="algorithm_test.h" />
+    <ClInclude Include="matrix.h" />
+    <ClInclude Include="matrix_test.h" />
     <ClInclude Include="parallel_for.h" />
     <ClInclude Include="parallel_for_test.h" />
     <ClInclude Include="queue_test.h" />
